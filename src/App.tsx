@@ -6,43 +6,39 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const getColorValue = (percentage: number, from: number, to: number) => {
   if (from < to) {
-    const newValue = Math.round((to * percentage) / 100)
-
-    return newValue < from ? from : newValue
+    return Math.max(Math.round((to * percentage) / 100), from)
   } else {
-    const newValue = Math.round((from * percentage) / 100)
+    const totalDifference = from - to
 
-    return from - (newValue < to ? to : newValue)
+    const differenceToAdd = Math.round((totalDifference * percentage) / 100)
+
+    return from - differenceToAdd
   }
 }
 
 const MAX_COLOR = 'rgb(191, 255, 0)'
 const CENTER_COLOR = 'rgb(85, 70, 255)'
-const MIN_COLOR = '#ff7bca'
+const MIN_COLOR = 'rgb(255, 123, 202)'
+
+const defaultState: RgbColor = {
+  red: 0,
+  green: 0,
+  blue: 0,
+}
 
 export const App: React.FC = () => {
-  const [currentColor, setCurrentColor] = useState<RgbColor>({
-    red: 0,
-    green: 0,
-    blue: 0,
-  })
-  const [centerColor, setCenterColor] = useState<RgbColor>({
-    red: 0,
-    green: 0,
-    blue: 0,
-  })
-  const [maxColor, setMaxColor] = useState<RgbColor>({
-    red: 0,
-    green: 0,
-    blue: 0,
-  })
+  const [currentColor, setCurrentColor] = useState<RgbColor>(defaultState)
+  const [centerColor, setCenterColor] = useState<RgbColor>(defaultState)
+  const [maxColor, setMaxColor] = useState<RgbColor>(defaultState)
 
   const container = useRef<HTMLDivElement>(null)
 
   const getNewRGBColor = (from: string, to: string, percentage: number) => {
+    // parsing to rgb object
     const minRGB = parseToRgb(from)
     const toRGB = parseToRgb(to)
 
+    // merging to a single object
     const colors = {
       red: {
         from: minRGB.red,
@@ -58,6 +54,7 @@ export const App: React.FC = () => {
       },
     }
 
+    // new color
     const newRGB = {
       red: getColorValue(percentage, colors.red.from, colors.red.to),
       green: getColorValue(percentage, colors.green.from, colors.green.to),
@@ -89,7 +86,14 @@ export const App: React.FC = () => {
 
       container.current.style.background = colorString
     } else {
-      container.current.style.background = MIN_COLOR
+      const cursorXPercentage = Math.abs((100 * cursorX) / center - 100)
+      const colorString = getNewRGBColor(
+        CENTER_COLOR,
+        MIN_COLOR,
+        cursorXPercentage,
+      )
+
+      container.current.style.background = colorString
     }
   }, [])
 
