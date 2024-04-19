@@ -1,99 +1,58 @@
 import './styles/global.css'
 
-import { parseToRgb, rgbToColorString } from 'polished'
+import { parseToRgb } from 'polished'
 import { RgbColor } from 'polished/lib/types/color'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const getColorValue = (percentage: number, from: number, to: number) => {
-  if (from < to) {
-    return Math.max(Math.round((to * percentage) / 100), from)
-  } else {
-    const totalDifference = from - to
+import { rgbColorByPercentage } from './utils/color'
 
-    const differenceToAdd = Math.round((totalDifference * percentage) / 100)
-
-    return from - differenceToAdd
-  }
-}
-
-const MAX_COLOR = 'rgb(191, 255, 0)'
+// Sample rgb string colors
+const START_COLOR = 'rgb(255, 123, 202)'
 const CENTER_COLOR = 'rgb(85, 70, 255)'
-const MIN_COLOR = 'rgb(255, 123, 202)'
+const END_COLOR = 'rgb(191, 255, 0)'
 
-const defaultState: RgbColor = {
-  red: 0,
-  green: 0,
-  blue: 0,
-}
+// Parse to RGB Object
+const startColor = parseToRgb(START_COLOR)
+const centerColor = parseToRgb(START_COLOR)
+const endColor = parseToRgb(END_COLOR)
 
 export const App: React.FC = () => {
-  const [currentColor, setCurrentColor] = useState<RgbColor>(defaultState)
-  const [centerColor, setCenterColor] = useState<RgbColor>(defaultState)
-  const [maxColor, setMaxColor] = useState<RgbColor>(defaultState)
+  const [currentColor, setCurrentColor] = useState<RgbColor>({
+    red: 0,
+    green: 0,
+    blue: 0,
+  })
 
-  const container = useRef<HTMLDivElement>(null)
-
-  const getNewRGBColor = (from: string, to: string, percentage: number) => {
-    // parsing to rgb object
-    const minRGB = parseToRgb(from)
-    const toRGB = parseToRgb(to)
-
-    // merging to a single object
-    const colors = {
-      red: {
-        from: minRGB.red,
-        to: toRGB.red,
-      },
-      green: {
-        from: minRGB.green,
-        to: toRGB.green,
-      },
-      blue: {
-        from: minRGB.blue,
-        to: toRGB.blue,
-      },
-    }
-
-    // new color
-    const newRGB = {
-      red: getColorValue(percentage, colors.red.from, colors.red.to),
-      green: getColorValue(percentage, colors.green.from, colors.green.to),
-      blue: getColorValue(percentage, colors.blue.from, colors.blue.to),
-    }
-
-    const colorString = rgbToColorString(newRGB)
-
-    setCurrentColor(newRGB)
-    setCenterColor(minRGB)
-    setMaxColor(toRGB)
-
-    return colorString
-  }
+  const colorDisplayRef = useRef<HTMLDivElement>(null)
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!container.current) return
+    if (!colorDisplayRef.current) return
 
-    const center = window.innerWidth / 2
-    const cursorX = event.clientX
+    const screenCenterX = window.innerWidth / 2
+    const cursorPositionX = event.clientX
 
-    if (cursorX > center) {
-      const cursorXPercentage = (100 * cursorX) / center - 100
-      const colorString = getNewRGBColor(
-        CENTER_COLOR,
-        MAX_COLOR,
-        cursorXPercentage,
-      )
+    if (cursorPositionX > screenCenterX) {
+      // Right / End
+      const cursorXPercentage = (100 * cursorPositionX) / screenCenterX - 100
+      const colorString = rgbColorByPercentage({
+        start: CENTER_COLOR,
+        end: END_COLOR,
+        percentage: cursorXPercentage,
+      })
 
-      container.current.style.background = colorString
+      colorDisplayRef.current.style.background = colorString
     } else {
-      const cursorXPercentage = Math.abs((100 * cursorX) / center - 100)
-      const colorString = getNewRGBColor(
-        CENTER_COLOR,
-        MIN_COLOR,
-        cursorXPercentage,
+      // Left / Start
+      const cursorXPercentage = Math.abs(
+        (100 * cursorPositionX) / screenCenterX - 100,
       )
+      const colorString = rgbColorByPercentage({
+        start: CENTER_COLOR,
+        end: START_COLOR,
+        percentage: cursorXPercentage,
+      })
 
-      container.current.style.background = colorString
+      colorDisplayRef.current.style.background = colorString
     }
   }, [])
 
@@ -104,10 +63,8 @@ export const App: React.FC = () => {
   }, [handleMouseMove])
 
   return (
-    <div ref={container} className="container">
-      <p>Center: {JSON.stringify(centerColor)}</p>
-      <p>Max: {JSON.stringify(maxColor)}</p>
-      <p>Current: {JSON.stringify(currentColor)}</p>
+    <div className="container">
+      <div ref={colorDisplayRef} className="color-display" />
     </div>
   )
 }
