@@ -43,10 +43,7 @@ tertiary: '#ff7bca' */
   max-width: 1200px;
 }
 
-.container label {
-  display: block;
-}
-
-.container label input {
-  margin-left: 0.5rem;
+.container p {
+  color: white;
+  font-weight: 900;
 }

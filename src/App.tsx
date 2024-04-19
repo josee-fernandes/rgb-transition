@@ -1,68 +1,109 @@
 import './styles/global.css'
 
-import { useEffect, useRef, useState } from 'react'
+import { parseToRgb, rgbToColorString } from 'polished'
+import { RgbColor } from 'polished/lib/types/color'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-const getColorValue = (percentage: number, maxValue: number) => {
-  return (maxValue * percentage) / 100
+const getColorValue = (percentage: number, from: number, to: number) => {
+  if (from < to) {
+    const newValue = Math.round((to * percentage) / 100)
+
+    return newValue < from ? from : newValue
+  } else {
+    const newValue = Math.round((from * percentage) / 100)
+
+    return from - (newValue < to ? to : newValue)
+  }
 }
 
-const MAX_COLOR = 'rgb(255, 0, 0)'
-const MIN_COLOR = 'rgb(0, 0, 255)'
+const MAX_COLOR = 'rgb(191, 255, 0)'
+const CENTER_COLOR = 'rgb(85, 70, 255)'
+const MIN_COLOR = '#ff7bca'
 
 export const App: React.FC = () => {
-  const [percentage, setPercentage] = useState(0)
-  const [maxColorValue, setMaxColorValue] = useState(0)
+  const [currentColor, setCurrentColor] = useState<RgbColor>({
+    red: 0,
+    green: 0,
+    blue: 0,
+  })
+  const [centerColor, setCenterColor] = useState<RgbColor>({
+    red: 0,
+    green: 0,
+    blue: 0,
+  })
+  const [maxColor, setMaxColor] = useState<RgbColor>({
+    red: 0,
+    green: 0,
+    blue: 0,
+  })
 
   const container = useRef<HTMLDivElement>(null)
 
-  const handleMouseMove = (event: MouseEvent) => {
+  const getNewRGBColor = (from: string, to: string, percentage: number) => {
+    const minRGB = parseToRgb(from)
+    const toRGB = parseToRgb(to)
+
+    const colors = {
+      red: {
+        from: minRGB.red,
+        to: toRGB.red,
+      },
+      green: {
+        from: minRGB.green,
+        to: toRGB.green,
+      },
+      blue: {
+        from: minRGB.blue,
+        to: toRGB.blue,
+      },
+    }
+
+    const newRGB = {
+      red: getColorValue(percentage, colors.red.from, colors.red.to),
+      green: getColorValue(percentage, colors.green.from, colors.green.to),
+      blue: getColorValue(percentage, colors.blue.from, colors.blue.to),
+    }
+
+    const colorString = rgbToColorString(newRGB)
+
+    setCurrentColor(newRGB)
+    setCenterColor(minRGB)
+    setMaxColor(toRGB)
+
+    return colorString
+  }
+
+  const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!container.current) return
-    // console.log('window innerWidth', window.innerWidth)
-    // console.log('event clientX', event.clientX)
 
     const center = window.innerWidth / 2
-
     const cursorX = event.clientX
 
     if (cursorX > center) {
-      container.current.style.background = MAX_COLOR
-      console.log('direita')
+      const cursorXPercentage = (100 * cursorX) / center - 100
+      const colorString = getNewRGBColor(
+        CENTER_COLOR,
+        MAX_COLOR,
+        cursorXPercentage,
+      )
+
+      container.current.style.background = colorString
     } else {
       container.current.style.background = MIN_COLOR
-      console.log('esquerda')
     }
-  }
+  }, [])
 
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
 
     return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [])
+  }, [handleMouseMove])
 
   return (
     <div ref={container} className="container">
-      <label>
-        Percentage
-        <input
-          type="number"
-          min={0}
-          max={100}
-          value={percentage}
-          onChange={(event) => setPercentage(Number(event.target.value))}
-        />
-        %
-      </label>
-      <label>
-        Max color value
-        <input
-          type="number"
-          min={0}
-          max={255}
-          value={maxColorValue}
-          onChange={(event) => setMaxColorValue(Number(event.target.value))}
-        />
-      </label>
-      Calculated value: {getColorValue(percentage, maxColorValue)}
+      <p>Center: {JSON.stringify(centerColor)}</p>
+      <p>Max: {JSON.stringify(maxColor)}</p>
+      <p>Current: {JSON.stringify(currentColor)}</p>
     </div>
   )
 }
