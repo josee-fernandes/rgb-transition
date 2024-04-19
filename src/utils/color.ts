@@ -74,3 +74,31 @@ export const rgbColorByPercentage: RgbColorByPercentageFn = ({
 
   return rgbToColorString(newRGB)
 }
+
+export const hexToRGB = (hex: string) => {
+  try {
+    const hexCode = hex.replace(/#/, '').match(/.{1,2}/g) ?? ''
+
+    let rgb: number[]
+
+    if (hexCode.length) {
+      rgb = [
+        parseInt(hexCode[0], 16),
+        parseInt(hexCode[1], 16),
+        parseInt(hexCode[2], 16),
+      ]
+    } else {
+      return [0, 0, 0]
+    }
+
+    return rgb
+  } catch (error) {
+    return [0, 0, 0]
+  }
+}
+
+export const hexToRGBString = (hex: string) => {
+  const rgb = hexToRGB(hex)
+
+  return `rgb(${rgb.join(',')})`
+}

@@ -1,27 +1,16 @@
 import './styles/global.css'
 
-import { parseToRgb } from 'polished'
-import { RgbColor } from 'polished/lib/types/color'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { rgbColorByPercentage } from './utils/color'
+import { hexToRGBString, rgbColorByPercentage } from './utils/color'
 
 // Sample rgb string colors
 const START_COLOR = 'rgb(255, 123, 202)'
 const CENTER_COLOR = 'rgb(85, 70, 255)'
 const END_COLOR = 'rgb(191, 255, 0)'
 
-// Parse to RGB Object
-const startColor = parseToRgb(START_COLOR)
-const centerColor = parseToRgb(START_COLOR)
-const endColor = parseToRgb(END_COLOR)
-
 export const App: React.FC = () => {
-  const [currentColor, setCurrentColor] = useState<RgbColor>({
-    red: 0,
-    green: 0,
-    blue: 0,
-  })
+  const [currentColor, setCurrentColor] = useState(CENTER_COLOR)
 
   const colorDisplayRef = useRef<HTMLDivElement>(null)
 
@@ -40,6 +29,8 @@ export const App: React.FC = () => {
         percentage: cursorXPercentage,
       })
 
+      setCurrentColor(colorString)
+
       colorDisplayRef.current.style.background = colorString
     } else {
       // Left / Start
@@ -52,6 +43,8 @@ export const App: React.FC = () => {
         percentage: cursorXPercentage,
       })
 
+      setCurrentColor(colorString)
+
       colorDisplayRef.current.style.background = colorString
     }
   }, [])
@@ -63,8 +56,24 @@ export const App: React.FC = () => {
   }, [handleMouseMove])
 
   return (
-    <div className="container">
+    <main className="wrapper container">
+      <h1>RGB Transition</h1>
+      <div className="colors-info">
+        <div>
+          <h2>Start</h2>
+          <p>{START_COLOR}</p>
+        </div>
+        <div>
+          <h2>Center</h2>
+          <p>{CENTER_COLOR}</p>
+        </div>
+        <div>
+          <h2>End</h2>
+          <p>{END_COLOR}</p>
+        </div>
+      </div>
       <div ref={colorDisplayRef} className="color-display" />
-    </div>
+      {hexToRGBString(currentColor)}
+    </main>
   )
 }
